@@ -23,16 +23,20 @@ using Amazon.SimpleDB;
 using Amazon.SimpleDB.Model;
 using System.Net;
 using System.Drawing;
+using System.Reflection;
 
 namespace ImageTransport
 {
     public class imgTransport
     {
+        //Initialize the log object
+        //public string log = "";
+
         //CONSTANTS
         public const int PART_SIZE = 1000; //If we want to ajdust the part size
 
         //Starts on creation
-        static System.Collections.Specialized.StringCollection log = new System.Collections.Specialized.StringCollection();
+        //static System.Collections.Specialized.StringCollection log = new System.Collections.Specialized.StringCollection();
         static ArrayList masterList = new ArrayList();
 
         //What is the computer's name?
@@ -98,6 +102,7 @@ namespace ImageTransport
             switch (vendorDB)
             {
                 case vendorDBtype.AmazonDB:
+                    
                     XML = populateAmazonDB_ML();
                     break;
                 case vendorDBtype.Dynamo:
@@ -166,7 +171,8 @@ namespace ImageTransport
                 // is not necessarily the appropriate action in all scenarios. 
                 if (!di.IsReady)
                 {
-                    Console.WriteLine("The drive {0} could not be read", di.Name);
+                    //Console.WriteLine("The drive {0} could not be read", di.Name);
+                    log("The drive " + di.Name + " could not be read.");
                     continue;
                 }
                 System.IO.DirectoryInfo rootDir = di.RootDirectory;
@@ -175,49 +181,15 @@ namespace ImageTransport
 
             // Write out all the files that could not be processed.
             StringBuilder sb = new StringBuilder();
-            // Never hurts to write to console.
-            Console.WriteLine("Files with restricted access:");
-            foreach (string s in log)
-            {
-                Console.WriteLine(s);
-                sb.AppendLine(s);
-            }
-
             using (StreamWriter outfile = new StreamWriter(@"\UserInputFile.txt", true))
             {
                 outfile.Write(sb.ToString());
             }
-
-            // Keep the console window open in debug mode.
-            if (DEBUG_ON)
-            {
-                Console.WriteLine("Press any key");
-                Console.ReadKey();
-            }
-
         }
-
-        //private static void AddFiles(string path, IList<string> files)
-        //{
-        //    try
-        //    {
-        //        Directory.GetFiles(path)
-        //            .ToList()
-        //            .ForEach(s => files.Add(s));
-
-        //        Directory.GetDirectories(path)
-        //            .ToList()
-        //            .ForEach(s => AddFiles(s, files));
-        //    }
-        //    catch (UnauthorizedAccessException)
-        //    {
-        //        // ok, so we are not allowed to dig into that directory. Move on.
-        //    }
-        //}
 
         ///File Searching / Picture indexing
         ///
-        static void WalkDirectoryTree(System.IO.DirectoryInfo root)
+        void WalkDirectoryTree(System.IO.DirectoryInfo root)
         {
             System.IO.FileInfo[] files = null;
             System.IO.DirectoryInfo[] subDirs = null;
@@ -225,6 +197,7 @@ namespace ImageTransport
             //MasterList contains all JPGs found
 
             // First, process all the files directly under this folder 
+            String test = "";
             try
             {
                 files = root.GetFiles("*.*");
@@ -236,12 +209,15 @@ namespace ImageTransport
                 // This code just writes out the message and continues to recurse. 
                 // You may decide to do something different here. For example, you 
                 // can try to elevate your privileges and access the file again.
-                log.Add(e.Message);
-            }
+                //log(e.Message);
+                log("WalkDirectoryTree: " + e.Message);
 
+                
+            }
             catch (System.IO.DirectoryNotFoundException e)
             {
-                Console.WriteLine(e.Message);
+                //Console.WriteLine(e.Message);
+                log(e.Message);
             }
 
             if (files != null)
@@ -249,30 +225,25 @@ namespace ImageTransport
 
                 foreach (System.IO.FileInfo fi in files)
                 {
-                    // In this example, we only access the existing FileInfo object. If we 
-                    // want to open, delete or modify the file, then 
-                    // a try-catch block is required here to handle the case 
-                    // where the file has been deleted since the call to TraverseTree().
-                    Console.WriteLine(fi.FullName);
-                    //Dim List() as string = Directory.GetFiles(Path, "*.jpg")
+                    //Console.WriteLine(fi.FullName);
+                    
                     try
                     {
-                        //string[] List = Directory.GetFiles(fi.FullName, GetImageFiles(fi.FullName).ToString());
-                        //masterList.AddRange(List);
-                        //DirectoryInfo dir = new DirectoryInfo(fi.FullName);
-                        //FileInfo[] imgFiles = dir.GetFiles("*.jpg");
+                        //Specified search pattern here; used jpg
                         if (fi.FullName.ToString().Contains("jpg"))
                         {
                             masterList.Add(fi.FullName.ToString());
                         }
                     }
-                    catch (IOException)
+                    catch (IOException ex)
                     {
-                        //Do nothing
+                        //IOException
+                        log(ex.Message);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        Console.WriteLine("Non-IO error");
+                        //Non-IO error
+                        log(ex.Message);
                     }
 
                     //Just for debugging purposes (as it takes a while to index all the files)
@@ -361,9 +332,8 @@ namespace ImageTransport
             {
                 if (!sendImage(filename, partNo.ToString(), part))
                 {
-                    Console.WriteLine("Error sending file.");
                     //Create method to capture and calculate errors.
-
+                    log("Error sending file.");
                 }
                 partNo++;
             }
@@ -397,17 +367,14 @@ namespace ImageTransport
             }
             catch (AmazonSimpleDBException ex)
             {
-                Console.WriteLine("Caught Exception: " + ex.Message);
-                Console.WriteLine("Response Status Code: " + ex.StatusCode);
-                Console.WriteLine("Error Code: " + ex.ErrorCode);
-                Console.WriteLine("Error Type: " + ex.ErrorType);
-                Console.WriteLine("Request ID: " + ex.RequestId);
-                Console.WriteLine("XML: " + ex.XML);
+                log(".........AmazonSimpleDBException.........");
+                log("Caught Exception: " + ex.Message);
+                log("Response Status Code: " + ex.StatusCode);
+                log("Error Code: " + ex.ErrorCode);
+                log("Error Type: " + ex.ErrorType);
+                log("Request ID: " + ex.RequestId);
+                log("XML: " + ex.XML);
             }
-
-            Console.WriteLine("Press Enter to continue...");
-            Console.Read();
-
         }
         public void sendIndex(String XML)
         {
@@ -431,14 +398,9 @@ namespace ImageTransport
         }
         public void sendAmazonSimpleDbIndex(String XML)
         {
-            //Image image = Image.FromFile(raw.Text);
-            //System.Drawing.Imaging.ImageFormat format = image.RawFormat;
-
             AmazonSimpleDB sdb = AWSClientFactory.CreateAmazonSimpleDBClient(RegionEndpoint.USWest2);
-
             try
             {
-
                 String domainName = "";
 
                 CreateDomainRequest createDomain2 = (new CreateDomainRequest()).WithDomainName("index");
@@ -457,18 +419,18 @@ namespace ImageTransport
             }
             catch (AmazonSimpleDBException ex)
             {
-                Console.WriteLine("Caught Exception: " + ex.Message);
-                Console.WriteLine("Response Status Code: " + ex.StatusCode);
-                Console.WriteLine("Error Code: " + ex.ErrorCode);
-                Console.WriteLine("Error Type: " + ex.ErrorType);
-                Console.WriteLine("Request ID: " + ex.RequestId);
-                Console.WriteLine("XML: " + ex.XML);
+                log("Caught Exception: " + ex.Message);
+                log("Response Status Code: " + ex.StatusCode);
+                log("Error Code: " + ex.ErrorCode);
+                log("Error Type: " + ex.ErrorType);
+                log("Request ID: " + ex.RequestId);
+                log("XML: " + ex.XML);
             }
 
             //Console.WriteLine("Press Enter to continue...");
             //Console.Read();
         }
-        public static bool sendImage(String filename, String partNo, String part)
+        public bool sendImage(String filename, String partNo, String part)
         {
             try
             {
@@ -491,11 +453,11 @@ namespace ImageTransport
                 return true;
             }catch(Exception ex){
                 //Error message indicating ex
-                Console.WriteLine("Exception: " + ex);
+                log("Exception: " + ex);
                 return false;
             }
         }
-        public static bool sendAmazonSimpleDbImage(String filename, String partNo, String part)
+        public bool sendAmazonSimpleDbImage(String filename, String partNo, String part)
         {
             AmazonSimpleDB sdb = AWSClientFactory.CreateAmazonSimpleDBClient(RegionEndpoint.USWest2);
             try
@@ -519,12 +481,12 @@ namespace ImageTransport
             }
             catch (AmazonSimpleDBException ex)
             {
-                Console.WriteLine("Caught Exception: " + ex.Message);
-                Console.WriteLine("Response Status Code: " + ex.StatusCode);
-                Console.WriteLine("Error Code: " + ex.ErrorCode);
-                Console.WriteLine("Error Type: " + ex.ErrorType);
-                Console.WriteLine("Request ID: " + ex.RequestId);
-                Console.WriteLine("XML: " + ex.XML);
+                log("Caught Exception: " + ex.Message);
+                log("Response Status Code: " + ex.StatusCode);
+                log("Error Code: " + ex.ErrorCode);
+                log("Error Type: " + ex.ErrorType);
+                log("Request ID: " + ex.RequestId);
+                log("XML: " + ex.XML);
 
                 return false;
             }
@@ -620,6 +582,13 @@ namespace ImageTransport
                     break;
             }
             return false;
+        }
+
+        public void log(String entry){
+            // Write the log to a file.
+            System.IO.StreamWriter file = new System.IO.StreamWriter(@"log.txt");
+            file.WriteLine(entry);
+            file.Close();
         }
     }
 }
