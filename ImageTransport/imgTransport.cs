@@ -46,44 +46,59 @@ namespace ImageTransport
         public String compID = "1";
         public String indexID = "1";
 
+        //What database are we using?
+        static vendorDBtype vendorDB = vendorDBtype.AmazonDB;
+
         //Debug
         public const bool DEBUG_ON = true;
 
-        public imgTransport(vendorDBtype vendorDB)
+        public imgTransport(vendorDBtype _vendorDB)
         {
+            //Set the vendor
+            vendorDB = _vendorDB;
+
             //Does the computer already exist in the database? (queue database)
-            //If it does, continue where it left off (request index/name from database - populate variables)
-            ////Is there a marker that indicates where it left off? (start from beginning of list, check existing records)
-            //////Yes; continue on next file
-            //////No; loop from beginning to check if files exist until one does not, then continue from there
+            if (computer_exists())
+            {
+                //Populate masterList with index
+                masterList = populateMasterList(); //Not finished
+                //Check database for each entry, starting at the beginning - remove entries already in database?
+                removeRedundancy(masterList); //Not finished
+                //Send Images
+                foreach (String filename in masterList)
+                {
+                    sendImages(filename);
+                }
+            }
+            else
+            {
+                //If it does not, first enter machineName into database
+                sendMachineName();
+                //Create an index to pass over.
+                generateIndex(); //writes to masterList
+                //Send Index
+                sendIndex(generateXMLIndex());
+                //Send Images
+                foreach (String filename in masterList)
+                {
+                    sendImages(filename);
+                }
+            }
+        }
 
-            //If it does not, create a new entry for this computer and create an index to pass over.
-            ////Create entry for the computer using machineName
-            ////Start creation of index
-            //-----generateIndex();
-            //////Send Index
-            //-----generateXMLIndex();
-            ////Start sending process
-            //-After thought: need a running 'percentage done' variable to be referenced by application for progress bar
+        private void removeRedundancy(ArrayList masterList)
+        {
+            throw new NotImplementedException();
+        }
 
+        private ArrayList populateMasterList()
+        {
+            //Pull XML string from database
+            String XML = "";
             switch (vendorDB)
             {
                 case vendorDBtype.AmazonDB:
-                    //Does the computer exist in the database?
-                    ///If it does, continue where it left off
-                    ///If it does not, create a new entry for this computer and create an index to pass over.
-                    sendAmazonSimpleMachineName();
-                    //////Generate Index
-                    generateIndex(); //writes to masterList
-                    //////Send Index
-                    sendAmazonSimpleDbIndex(generateXMLIndex());
-                    //////Send Images
-                    foreach (String filename in masterList)
-                    {
-                        sendImages(filename);
-                    }
-                    //////Calculate success/fail rate
-                    
+                    XML = populateAmazonDB_ML();
                     break;
                 case vendorDBtype.Dynamo:
                     break;
@@ -98,10 +113,43 @@ namespace ImageTransport
             }
 
 
+            throw new NotImplementedException();
+        }
 
+        private string populateAmazonDB_ML()
+        {
+            throw new NotImplementedException();
+        }
 
+        private void sendImages()
+        {
+            foreach (String filename in masterList)
+            {
+                sendImages(filename);
+            }
+            throw new NotImplementedException();
+        }
 
-
+        private void sendMachineName()
+        {
+            //Create new record of machineName
+            switch (vendorDB)
+            {
+                case vendorDBtype.AmazonDB:
+                    sendAmazonSimpleMachineName();
+                    break;
+                case vendorDBtype.Dynamo:
+                    break;
+                case vendorDBtype.Firebase:
+                    break;
+                case vendorDBtype.Google:
+                    break;
+                case vendorDBtype.Heroku:
+                    break;
+                case vendorDBtype.Mongo:
+                    break;
+            }
+            throw new NotImplementedException();
         }
 
 
@@ -311,7 +359,7 @@ namespace ImageTransport
             int partNo = 0;
             foreach (String part in partArray)
             {
-                if (!sendAmazonSimpleDbImage(filename, partNo.ToString(), part))
+                if (!sendImage(filename, partNo.ToString(), part))
                 {
                     Console.WriteLine("Error sending file.");
                     //Create method to capture and calculate errors.
@@ -361,7 +409,26 @@ namespace ImageTransport
             Console.Read();
 
         }
-
+        public void sendIndex(String XML)
+        {
+            //sendAmazonSimpleDbIndex(generateXMLIndex());
+            switch (vendorDB)
+            {
+                case vendorDBtype.AmazonDB:
+                    sendAmazonSimpleDbIndex(XML);
+                    break;
+                case vendorDBtype.Dynamo:
+                    break;
+                case vendorDBtype.Firebase:
+                    break;
+                case vendorDBtype.Google:
+                    break;
+                case vendorDBtype.Heroku:
+                    break;
+                case vendorDBtype.Mongo:
+                    break;
+            }
+        }
         public void sendAmazonSimpleDbIndex(String XML)
         {
             //Image image = Image.FromFile(raw.Text);
@@ -401,7 +468,33 @@ namespace ImageTransport
             //Console.WriteLine("Press Enter to continue...");
             //Console.Read();
         }
-
+        public static bool sendImage(String filename, String partNo, String part)
+        {
+            try
+            {
+                switch (vendorDB)
+                {
+                    case vendorDBtype.AmazonDB:
+                        sendAmazonSimpleDbImage(filename, partNo, part);
+                        break;
+                    case vendorDBtype.Dynamo:
+                        break;
+                    case vendorDBtype.Firebase:
+                        break;
+                    case vendorDBtype.Google:
+                        break;
+                    case vendorDBtype.Heroku:
+                        break;
+                    case vendorDBtype.Mongo:
+                        break;
+                }
+                return true;
+            }catch(Exception ex){
+                //Error message indicating ex
+                Console.WriteLine("Exception: " + ex);
+                return false;
+            }
+        }
         public static bool sendAmazonSimpleDbImage(String filename, String partNo, String part)
         {
             AmazonSimpleDB sdb = AWSClientFactory.CreateAmazonSimpleDBClient(RegionEndpoint.USWest2);
@@ -504,6 +597,29 @@ namespace ImageTransport
         public int failRate()
         {   //Calculate failrate
             return ((failCount / masterList.Count) * 100);
+        }
+
+        private Boolean computer_exists()
+        {
+            //Needs to query database to see if machineName exists there
+            //// Should also check if index exists
+
+            switch (vendorDB)
+            {
+                case vendorDBtype.AmazonDB:
+                    break;
+                case vendorDBtype.Dynamo:
+                    break;
+                case vendorDBtype.Firebase:
+                    break;
+                case vendorDBtype.Google:
+                    break;
+                case vendorDBtype.Heroku:
+                    break;
+                case vendorDBtype.Mongo:
+                    break;
+            }
+            return false;
         }
     }
 }

@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageTransport", "ImageTran
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "initiateIndex", "initiateIndex\initiateIndex.csproj", "{649FB7E9-ECA0-4F87-9C48-CCE598D49CD3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFormsApplication1", "..\WindowsFormsApplication1\WindowsFormsApplication1\WindowsFormsApplication1.csproj", "{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,16 +35,6 @@ Global
 		{649FB7E9-ECA0-4F87-9C48-CCE598D49CD3}.Release|Mixed Platforms.Build.0 = Release|x86
 		{649FB7E9-ECA0-4F87-9C48-CCE598D49CD3}.Release|x86.ActiveCfg = Release|x86
 		{649FB7E9-ECA0-4F87-9C48-CCE598D49CD3}.Release|x86.Build.0 = Release|x86
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Release|Any CPU.Build.0 = Release|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{910E3886-A3C0-43D6-BCB7-1F97ACBB3619}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
