@@ -36,7 +36,7 @@ namespace initiateIndex
         static void Main(string[] args)
         {
             //Amazon DB
-            imgTransport transportObj = new imgTransport(imgTransport.vendorDBtype.AmazonDB);
+            imgTransport transportObj = new imgTransport(imgTransport.vendorDBtype.Dynamo);
             //sendImages
             transportObj.sendImages("C:\\glassfish3\\glassfish\\docs\\api\\javax\\faces\\component\\UIComponentHierarchy.jpg");
         }

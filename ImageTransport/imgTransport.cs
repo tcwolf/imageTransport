@@ -47,11 +47,16 @@ namespace ImageTransport
         public int failCount = 0;
         public int successCount = 0;
 
+        //These need to be loaded from the database
         public String compID = "1";
         public String indexID = "1";
+        public int itemNo = 0;
 
         //What database are we using?
         static vendorDBtype vendorDB = vendorDBtype.AmazonDB;
+
+        //Vendor related variables
+        public static AmazonDynamoDB client;
 
         //Debug
         public const bool DEBUG_ON = true;
@@ -102,7 +107,7 @@ namespace ImageTransport
             switch (vendorDB)
             {
                 case vendorDBtype.AmazonDB:
-                    
+
                     XML = populateAmazonDB_ML();
                     break;
                 case vendorDBtype.Dynamo:
@@ -144,17 +149,198 @@ namespace ImageTransport
                     sendAmazonSimpleMachineName();
                     break;
                 case vendorDBtype.Dynamo:
+                    sendDynamoMachineName();
                     break;
                 case vendorDBtype.Firebase:
-                    break;
+                    throw new NotImplementedException();
+                //break;
                 case vendorDBtype.Google:
-                    break;
+                    throw new NotImplementedException();
+                //break;
                 case vendorDBtype.Heroku:
-                    break;
+                    throw new NotImplementedException();
+                //break;
                 case vendorDBtype.Mongo:
-                    break;
+                    throw new NotImplementedException();
+                //break;
             }
-            throw new NotImplementedException();
+        }
+
+        private void sendDynamoMachineName()
+        {
+
+            //Image image = Image.FromFile(raw.Text);
+
+            //System.Drawing.Imaging.ImageFormat format = image.RawFormat;
+            //string picture = ImageToBase64(image, format);
+            string[] SampleTables = new string[] { "Computer", "Index", "Images" };
+
+            Console.WriteLine("Getting list of tables");
+            List<string> currentTables = client.ListTables().ListTablesResult.TableNames;
+            Console.WriteLine("Number of tables: " + currentTables.Count);
+            client = new AmazonDynamoDBClient(RegionEndpoint.USWest2);
+            bool tablesAdded = false;
+            if (!currentTables.Contains("Computer"))
+            {
+                Console.WriteLine("Computer table does not exist, creating");
+                client.CreateTable(new CreateTableRequest
+                {
+                    TableName = "Computer",
+                    ProvisionedThroughput = new ProvisionedThroughput { ReadCapacityUnits = 10, WriteCapacityUnits = 10 },
+                    KeySchema = new KeySchema
+                    {
+                        HashKeyElement = new KeySchemaElement { AttributeName = "compID", AttributeType = "S" },
+
+                    }
+                });
+                tablesAdded = true;
+            }
+            //if (!currentTables.Contains("Index"))
+            //{
+            //    Console.WriteLine("Index table does not exist, creating");
+            //    client.CreateTable(new CreateTableRequest
+            //    {
+            //        TableName = "Index",
+            //        ProvisionedThroughput = new ProvisionedThroughput { ReadCapacityUnits = 10, WriteCapacityUnits = 10 },
+            //        KeySchema = new KeySchema
+            //        {
+
+            //            HashKeyElement = new KeySchemaElement { AttributeName = "indexID", AttributeType = "S" }
+            //        }
+            //    });
+            //    tablesAdded = true;
+            //}
+            //if (!currentTables.Contains("Images"))
+            //{
+            //    Console.WriteLine("Images table does not exist, creating");
+            //    client.CreateTable(new CreateTableRequest
+            //    {
+            //        TableName = "Images",
+            //        ProvisionedThroughput = new ProvisionedThroughput { ReadCapacityUnits = 10, WriteCapacityUnits = 10 },
+            //        KeySchema = new KeySchema
+            //        {
+            //            HashKeyElement = new KeySchemaElement { AttributeName = "imgeID", AttributeType = "S" },
+
+            //        }
+            //    });
+            //    tablesAdded = true;
+            //}
+
+            if (tablesAdded)
+            {
+                while (true)
+                {
+                    bool allActive = true;
+                    foreach (var table in SampleTables)
+                    {
+                        string tableStatus = GetTableStatus(table);
+                        bool isTableActive = string.Equals(tableStatus, "ACTIVE", StringComparison.OrdinalIgnoreCase);
+                        if (!isTableActive)
+                            allActive = false;
+                    }
+                    if (allActive)
+                    {
+                        Console.WriteLine("All tables are ACTIVE");
+                        break;
+                    }
+
+
+                }
+            }
+
+            //Console.WriteLine("All sample tables created");
+
+
+            //Console.WriteLine("Creating the context object");
+            DynamoDBContext context = new DynamoDBContext(client);
+
+            //Console.WriteLine("Creating actors");
+            Computer newcomputer = new Computer
+            {
+                compID1 = compID,
+                compName1 = machineName
+
+            };
+            //Index newIndex = new Index
+            //{
+            //    indexID1 = indexID.Text,
+            //    compID2 = CompID.Text,
+            //    XMLProfile1 = XML.Text
+            //};
+            //Images newImage = new Images
+            //{
+            //    imgID1 = ImgID.Text,
+            //    indexID1 = indexID.Text,
+            //    extension1 = Extension.Text,
+            //    location1 = Location.Text,
+            //    raw1 = picture
+            //};
+
+
+        }
+        [DynamoDBTable("Computer")]
+        public class Computer
+        {
+            [DynamoDBHashKey]
+            public string compID1 { get; set; }
+
+
+
+            [DynamoDBProperty(AttributeName = "compName")]
+            public string compName1 { get; set; }
+
+
+
+
+        }
+        [DynamoDBTable("Index")]
+        public class Index
+        {
+            [DynamoDBHashKey]
+            public string indexID1 { get; set; }
+
+
+
+            [DynamoDBProperty(AttributeName = "compID")]
+            public string compID2 { get; set; }
+            [DynamoDBProperty(AttributeName = "XMLProfile")]
+            public string XMLProfile1 { get; set; }
+
+
+
+        }
+        [DynamoDBTable("Images")]
+        public class Images
+        {
+            [DynamoDBHashKey]
+            public string imgID1 { get; set; }
+
+
+
+            [DynamoDBProperty(AttributeName = "indexID")]
+            public string indexID1 { get; set; }
+            [DynamoDBProperty(AttributeName = "extension")]
+            public string extension1 { get; set; }
+            [DynamoDBProperty(AttributeName = "location")]
+            public string location1 { get; set; }
+            [DynamoDBProperty(AttributeName = "raw")]
+            public string raw1 { get; set; }
+
+
+        }
+        private static string GetTableStatus(string tableName)
+        {
+            try
+            {
+                var table = client.DescribeTable(new DescribeTableRequest { TableName = tableName }).DescribeTableResult.Table;
+                return (table == null) ? string.Empty : table.TableStatus;
+            }
+            catch (AmazonDynamoDBException db)
+            {
+                if (db.ErrorCode == "ResourceNotFoundException")
+                    return string.Empty;
+                throw;
+            }
         }
 
 
@@ -206,18 +392,14 @@ namespace ImageTransport
             // than the application provides. 
             catch (UnauthorizedAccessException e)
             {
-                // This code just writes out the message and continues to recurse. 
-                // You may decide to do something different here. For example, you 
-                // can try to elevate your privileges and access the file again.
-                //log(e.Message);
-                log("WalkDirectoryTree: " + e.Message);
+                //log("WalkDirectoryTree: " + e.Message);
+                //failCount++;
 
-                
             }
             catch (System.IO.DirectoryNotFoundException e)
             {
                 //Console.WriteLine(e.Message);
-                log(e.Message);
+                //log(e.Message);
             }
 
             if (files != null)
@@ -226,7 +408,7 @@ namespace ImageTransport
                 foreach (System.IO.FileInfo fi in files)
                 {
                     //Console.WriteLine(fi.FullName);
-                    
+
                     try
                     {
                         //Specified search pattern here; used jpg
@@ -266,32 +448,6 @@ namespace ImageTransport
 
         }
 
-        //private static IEnumerable<string> GetImageFiles(string sourceFolder)
-        //{
-        //    return from file in System.IO.Directory.EnumerateFiles(sourceFolder)
-        //           let extension = Path.GetExtension(file)
-        //           where extension == ".jpg" || extension == ".gif" || extension == ".png"
-        //           select file;
-        //}
-
-        //void consoleRun()
-        //{
-        //    imgTransport transportObj = new imgTransport();
-        //    Console.Write("Machine name: " + transportObj.machineName);
-
-
-        //}
-
-        //void directorySearchTest(String startPath)
-        //{
-        //    //string startPath = @"C:\";
-        //    string[] oDirectories = Directory.GetDirectories(startPath, "xml", SearchOption.AllDirectories);
-        //    Console.WriteLine(oDirectories.Length.ToString());
-        //    foreach (string oCurrent in oDirectories)
-        //        Console.WriteLine(oCurrent);
-        //    Console.ReadLine();
-        //}
-
         public String generateXMLIndex()
         {
             //Does this XML need to be formatted using a specific standard?
@@ -318,7 +474,7 @@ namespace ImageTransport
         /// SENDING; Transport Layer
         /// </summary>
         /// 
-        
+
         //Generic Sending Mechanisms
         public void sendImages(String filename)
         {
@@ -338,6 +494,7 @@ namespace ImageTransport
                 partNo++;
             }
 
+            image.Dispose();
         }
 
 
@@ -419,12 +576,14 @@ namespace ImageTransport
             }
             catch (AmazonSimpleDBException ex)
             {
+                failCount++;
                 log("Caught Exception: " + ex.Message);
                 log("Response Status Code: " + ex.StatusCode);
                 log("Error Code: " + ex.ErrorCode);
                 log("Error Type: " + ex.ErrorType);
                 log("Request ID: " + ex.RequestId);
                 log("XML: " + ex.XML);
+
             }
 
             //Console.WriteLine("Press Enter to continue...");
@@ -451,7 +610,9 @@ namespace ImageTransport
                         break;
                 }
                 return true;
-            }catch(Exception ex){
+            }
+            catch (Exception ex)
+            {
                 //Error message indicating ex
                 log("Exception: " + ex);
                 return false;
@@ -468,7 +629,7 @@ namespace ImageTransport
                 sdb.CreateDomain(createDomain3);
 
                 domainName = "Images";
-                String itemNameThree = partNo.ToString();
+                String itemNameThree = itemNo.ToString();
                 PutAttributesRequest putAttributesActionThree = new PutAttributesRequest().WithDomainName(domainName).WithItemName(itemNameThree);
                 List<ReplaceableAttribute> attributesThree = putAttributesActionThree.Attribute;
                 attributesThree.Add(new ReplaceableAttribute().WithName("ImgID").WithValue("TestImage01"));
@@ -481,6 +642,7 @@ namespace ImageTransport
             }
             catch (AmazonSimpleDBException ex)
             {
+                failCount++;
                 log("Caught Exception: " + ex.Message);
                 log("Response Status Code: " + ex.StatusCode);
                 log("Error Code: " + ex.ErrorCode);
@@ -490,7 +652,7 @@ namespace ImageTransport
 
                 return false;
             }
-
+            itemNo++;
             return true;
         }
 
@@ -556,9 +718,9 @@ namespace ImageTransport
 
         //Success / Fail
 
-        public int failRate()
+        public String failRate()
         {   //Calculate failrate
-            return ((failCount / masterList.Count) * 100);
+            return ("((Fail Count: " + failCount + "))((Index Count: " + masterList.Count + "))");
         }
 
         private Boolean computer_exists()
@@ -584,9 +746,13 @@ namespace ImageTransport
             return false;
         }
 
-        public void log(String entry){
+        public void log(String entry)
+        {
             // Write the log to a file.
-            System.IO.StreamWriter file = new System.IO.StreamWriter(@"log.txt");
+            //System.IO.StreamWriter file = new System.IO.StreamWriter("C://Users//user//Documents//Visual Studio 2010//Projects//ImageTransport//ImageTransport//trunk//ImageTransport//logs//log.txt");
+            System.IO.StreamWriter file = File.AppendText("C://Users//user//Documents//Visual Studio 2010//Projects//ImageTransport//ImageTransport//trunk//ImageTransport//logs//log.txt");
+            file.Write("---" + DateTime.Now.ToString() + "---");
+            file.Write(failRate().ToString());
             file.WriteLine(entry);
             file.Close();
         }
